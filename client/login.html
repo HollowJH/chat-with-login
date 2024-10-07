@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" type="css" href="style.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/login.js" type="module"></script>
 </head>
 <body>
     <form id="login-form">
         <h2>Login</h2>
 
-        <label for="login-username"></label>
+        <label for="login-username">Username:</label>
         <input type="text" id="login-username" placeholder="Insert username" required>
 
-        <label for="login-password"></label>
+        <label for="login-password">Password:</label>
         <input type="password" id="login-password" required>
 
         <button type="submit">Login</button>
+        <p>Don't have an account yet? <a href="register.html">Register here</a></p>
     </form>
 </body>
 </html>
