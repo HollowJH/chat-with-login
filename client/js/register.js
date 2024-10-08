@@ -5,7 +5,7 @@ registerForm.addEventListener("submit", e => {
 
     const username = document.querySelector('#register-username').value
     const password = document.querySelector('#register-password').value
-    fetch("http://localhost:4000/login", {
+    fetch("http://localhost:4000/register", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

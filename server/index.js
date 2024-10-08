@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import cookieParser from "cookie-parser";
 import { hash, compare } from "bcrypt";
 import { validateUser } from "./schemas/user.js";
-import { login } from "./models/mysql.js";
+import { login, register } from "./models/mysql.js";
 
 const PORT = process.env.PORT ?? 4000
 const app = express()
@@ -19,12 +19,22 @@ const ACCEPTED_DOMAINS = [
 
 app.use("*", (req, res, next) => {
     const origin = req.header("origin")
+    
     if (ACCEPTED_DOMAINS.includes(origin)) {
         res.header("Access-Control-Allow-Origin", origin)
-        res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE")
+        res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+        res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        res.header("Access-Control-Allow-Credentials", "true");
+        
+        if (req.method === "OPTIONS") {
+            return res.sendStatus(200); // End the response for preflight
+        }
     }
+    
     next()
 })
+
+app.disable("x-powered-by")
 
 app.use(express.static(process.cwd() + "/client/"))
 app.use(express.json())
@@ -41,6 +51,18 @@ app.post('/login', async (req, res) => {
     if (!result.success) return res.status(400).json({ error: JSON.parse(result.error.message) })
 
     const {user, error} = await login({user: result.data})
+    if (error) return res.status(401).json(error)
+
+    res.send(user)
+})
+
+app.post('/register', async (req, res) => {
+    const {username, password} = req.body
+    const result = validateUser({username, password})
+
+    if (!result.success) return res.status(400).json({ error: JSON.parse(result.error.message) })
+
+    const {user, error} = await register({user: result.data})
     if (error) return res.status(401).json(error)
 
     res.send(user)

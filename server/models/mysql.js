@@ -1,4 +1,4 @@
-import { compareSync, hash } from "bcrypt";
+import { compareSync, hashSync } from "bcrypt";
 import mysql from "mysql2/promise";
 import "dotenv/config"
 
@@ -16,15 +16,25 @@ const config = {
 
 const connection = await mysql.createConnection(config)
 
-export async function login({user}) {
-    const {username, password} = (await connection.query("SELECT username, password FROM users WHERE LOWER(username) = ?", [user.username.toLowerCase()]))[0][0]
-    
-    if (!username) return { error : "No user found with the given credentials"};
+export async function login({ user }) {
+    const { username, password } = (await connection.query(
+        "SELECT username, password FROM users WHERE LOWER(username) = ?", 
+        [user.username.toLowerCase()])
+    )[0][0]
+
+    if (!username) return { error: "No user found with the given credentials" };
     const isValid = compareSync(user.password, password)
-    console.log(isValid)
-    return {user}
+    if (isValid) return { user }
+    return { error : "Wrong password" }
 }
 
-export async function register({user}) {
-    await connection.query("INSERT INTO users(username, password) VALUES (?, ?);", user.username, hash(user.password, 10))
+export async function register({ user }) {
+    const username = (await connection.query("SELECT username FROM users WHERE LOWER(username) = ?;", [user.username.toLowerCase()]))[0][0]
+    
+    if (username) return { error: "Username already exists" }
+    await connection.query(
+        "INSERT INTO users(username, password) VALUES (?, ?);", 
+        [user.username, hashSync(user.password, 10)]
+    )
+    return { user }
 }
