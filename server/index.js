@@ -2,9 +2,10 @@ import express from "express";
 import { Server } from "socket.io";
 import { createServer } from "node:http";
 import cookieParser from "cookie-parser";
-import { hash, compare } from "bcrypt";
 import { validateUser } from "./schemas/user.js";
 import { login, register } from "./models/mysql.js";
+import jwt from "jsonwebtoken"
+import "dotenv/config"
 
 const PORT = process.env.PORT ?? 4000
 const app = express()
@@ -40,6 +41,21 @@ app.use(express.static(process.cwd() + "/client/"))
 app.use(express.json())
 app.use(cookieParser())
 
+app.use((req, res, next) => {
+    const token = req.cookies
+    let data = null
+
+    req.session = {user: null}
+
+    try {
+        data = jwt.verify(token, process.env.JWT_SECRET)
+        req.session.user = data
+    } catch (error) {
+        req.session.user = null
+    }
+    next()
+})
+
 app.get("/", (req, res) => {
     res.sendFile(process.cwd() + '/client/login.html')
 })
@@ -51,9 +67,18 @@ app.post('/login', async (req, res) => {
     if (!result.success) return res.status(400).json({ error: JSON.parse(result.error.message) })
 
     const {user, error} = await login({user: result.data})
-    if (error) return res.status(401).json(error)
+    if (error) return res.status(401).json(error);
 
-    res.send(user)
+    const token = jwt.sign({id: user.id, username: user.username}, process.env.JWT_SECRET, {expiresIn: "1h"})
+
+    res
+    .cookie("access_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV,
+        strict: "strict",
+        maxAge: 1000 * 60 * 60
+    })
+    .send({user})
 })
 
 app.post('/register', async (req, res) => {

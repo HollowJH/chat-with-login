@@ -17,14 +17,14 @@ const config = {
 const connection = await mysql.createConnection(config)
 
 export async function login({ user }) {
-    const { username, password } = (await connection.query(
-        "SELECT username, password FROM users WHERE LOWER(username) = ?", 
+    const userDB = (await connection.query(
+        "SELECT * FROM users WHERE LOWER(username) = ?", 
         [user.username.toLowerCase()])
     )[0][0]
 
-    if (!username) return { error: "No user found with the given credentials" };
-    const isValid = compareSync(user.password, password)
-    if (isValid) return { user }
+    if (!userDB?.username) return { error: "No user found with the given credentials" };
+    const isValid = compareSync(user.password, userDB.password)
+    if (isValid) return { user: userDB }
     return { error : "Wrong password" }
 }
 
